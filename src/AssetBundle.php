@@ -31,10 +31,10 @@ final class AssetBundle extends AbstractBundle
             ->integerNode('retention')->min(7200)->defaultValue(604800)->end()
             ->arrayNode('roots')->useAttributeAsKey('name')->scalarPrototype()->end()->defaultValue([])->end()
             ->arrayNode('minify')->addDefaultsIfNotSet()->children()
-                ->booleanNode('css')->defaultFalse()->end()
-                ->booleanNode('js')->defaultFalse()->end()
+            ->booleanNode('css')->defaultFalse()->end()
+            ->booleanNode('js')->defaultFalse()->end()
             ->end()->end()
-        ->end();
+            ->end();
     }
 
     public function loadExtension(array $config, ContainerConfigurator $container, ContainerBuilder $builder): void
@@ -43,9 +43,16 @@ final class AssetBundle extends AbstractBundle
         $services->set(MatthiasMullieMinifier::class);
         $services->alias(MinifierInterface::class, MatthiasMullieMinifier::class);
         $services->set(AssetProcessor::class)->args([
-            '%kernel.project_dir%', $config['public_dir'], $config['output_dir'], $config['publication_dir'],
-            $config['cache_dir'], $config['roots'], $config['base_url'], $config['version'],
-            service(MinifierInterface::class), $config['minify'],
+            '%kernel.project_dir%',
+            $config['public_dir'],
+            $config['output_dir'],
+            $config['publication_dir'],
+            $config['cache_dir'],
+            $config['roots'],
+            $config['base_url'],
+            $config['version'],
+            service(MinifierInterface::class),
+            $config['minify'],
         ]);
         $services->set(AssetCollector::class)->args([service(AssetProcessor::class)])
             ->tag('kernel.reset', ['method' => 'reset']);

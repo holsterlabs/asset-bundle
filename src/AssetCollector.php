@@ -12,9 +12,7 @@ final class AssetCollector implements ResetInterface
     private array $assets = ['css' => [], 'js' => []];
     private array $rendered = ['css' => [], 'js' => []];
 
-    public function __construct(private readonly AssetProcessor $processor)
-    {
-    }
+    public function __construct(private readonly AssetProcessor $processor) {}
 
     public function addCss(string $source, array $options = []): void
     {
@@ -45,7 +43,7 @@ final class AssetCollector implements ResetInterface
     {
         $unknown = array_diff(array_keys($options), ['inline', 'external', 'library', 'standalone', 'priority', 'root', 'base_dir', 'attributes', 'id', 'minify']);
         if ($unknown !== []) {
-            throw new \InvalidArgumentException('Unknown asset options: '.implode(', ', $unknown));
+            throw new \InvalidArgumentException('Unknown asset options: ' . implode(', ', $unknown));
         }
         $options += ['inline' => false, 'external' => false, 'library' => false, 'standalone' => false, 'priority' => 0, 'root' => null, 'base_dir' => null, 'attributes' => [], 'minify' => null];
         if ($options['minify'] !== null && !is_bool($options['minify'])) {
@@ -53,15 +51,17 @@ final class AssetCollector implements ResetInterface
         }
         foreach (['inline', 'external', 'library', 'standalone'] as $flag) {
             if (!is_bool($options[$flag])) {
-                throw new \InvalidArgumentException($flag.' must be a boolean.');
+                throw new \InvalidArgumentException($flag . ' must be a boolean.');
             }
         }
         if ($options['external']) {
             if ($options['inline'] || $options['minify'] === true) {
                 throw new \InvalidArgumentException('External assets cannot be inline or explicitly minified.');
             }
-            if ($source === '' || preg_match('/[\x00-\x20\x7f\\\\]/', $source)
-                || (preg_match('/^([a-z][a-z0-9+.-]*):/i', $source, $scheme) && !in_array(strtolower($scheme[1]), ['http', 'https'], true))) {
+            if (
+                $source === '' || preg_match('/[\x00-\x20\x7f\\\\]/', $source)
+                || (preg_match('/^([a-z][a-z0-9+.-]*):/i', $source, $scheme) && !in_array(strtolower($scheme[1]), ['http', 'https'], true))
+            ) {
                 throw new \InvalidArgumentException('External assets require a relative URL or an HTTP(S) URL.');
             }
         }
@@ -72,16 +72,16 @@ final class AssetCollector implements ResetInterface
         foreach ($options['attributes'] as $name => $value) {
             $allowed = $type === 'css' ? ['media', 'title', 'disabled', 'crossorigin', 'referrerpolicy', 'nonce', 'integrity'] : ['type', 'defer', 'async', 'nomodule', 'crossorigin', 'referrerpolicy', 'nonce', 'integrity'];
             if (!in_array($name, $allowed, true) || (!is_string($value) && !is_bool($value))) {
-                throw new \InvalidArgumentException('Invalid asset HTML attribute: '.$name);
+                throw new \InvalidArgumentException('Invalid asset HTML attribute: ' . $name);
             }
         }
         if (($options['attributes']['type'] ?? '') === 'module' && !$options['standalone'] && !$options['external']) {
             throw new \InvalidArgumentException('JavaScript modules require standalone: true.');
         }
-        $id = $options['id'] ?? hash('sha256', ($options['external'] ? 'external:' : ($options['inline'] ? 'inline:' : 'file:')).$source);
+        $id = $options['id'] ?? hash('sha256', ($options['external'] ? 'external:' : ($options['inline'] ? 'inline:' : 'file:')) . $source);
         unset($options['id']);
         if (isset($this->assets[$type][$id]) && $this->assets[$type][$id] !== ['source' => $source, 'options' => $options]) {
-            throw new \LogicException('Conflicting registration for asset '.$id);
+            throw new \LogicException('Conflicting registration for asset ' . $id);
         }
         $this->assets[$type][$id] = ['source' => $source, 'options' => $options];
     }
@@ -89,8 +89,9 @@ final class AssetCollector implements ResetInterface
     private function render(string $type): string
     {
         $pending = array_diff_key($this->assets[$type], $this->rendered[$type]);
-        uasort($pending, static fn (array $a, array $b): int =>
-            ($b['options']['library'] <=> $a['options']['library']) ?: ($b['options']['priority'] <=> $a['options']['priority'])
+        uasort(
+            $pending,
+            static fn(array $a, array $b): int => ($b['options']['library'] <=> $a['options']['library']) ?: ($b['options']['priority'] <=> $a['options']['priority'])
         );
         // Only adjacent compatible assets are merged: standalone items keep their position.
         $groups = [];
@@ -110,12 +111,12 @@ final class AssetCollector implements ResetInterface
             $attributes = '';
             foreach ($group[0]['options']['attributes'] as $name => $value) {
                 if ($value !== false) {
-                    $attributes .= ' '.$name.($value === true ? '' : '="'.self::escape($value).'"');
+                    $attributes .= ' ' . $name . ($value === true ? '' : '="' . self::escape($value) . '"');
                 }
             }
             $html[] = $type === 'css'
-                ? '<link rel="stylesheet" href="'.self::escape($url).'"'.$attributes.'>'
-                : '<script src="'.self::escape($url).'"'.$attributes.'></script>';
+                ? '<link rel="stylesheet" href="' . self::escape($url) . '"' . $attributes . '>'
+                : '<script src="' . self::escape($url) . '"' . $attributes . '></script>';
         }
         $this->rendered[$type] += $pending;
 
